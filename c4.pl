@@ -1,7 +1,32 @@
 :- dynamic testNewBoard/1, testDrawFilledBoard/1.
 :- use_module(library(clpfd)).
+:- include(testBoards).
 
 play :- initialBoard(Board), move(Board, player).
+
+move(Board, player) :-
+    nl,write('Your turn.'),nl,
+    drawBoard(Board),
+    read(Move),
+    newBoard(Board, Move, red, NewBoard),
+    transitionMove(NewBoard, player).
+
+move(Board, computer) :-
+    getAvailableMoves(Board, AvailableMoves),
+    drawBoard(Board),
+    computerMove(Board, random, AvailableMoves, CPUMove),
+    newBoard(Board, CPUMove, yellow, NewBoard),
+    drawBoard(NewBoard),
+    transitionMove(NewBoard, computer).
+
+transitionMove(Board, player) :- checkForWin(Board, player).
+transitionMove(Board, player) :- move(Board, computer).
+
+transitionMove(Board, computer) :- checkForWin(Board, computer).
+transitionMove(Board, computer) :- move(Board, player).
+
+checkForWin(Board, computer) :- drawBoard(Board), win(Board), nl, write('The computer won!'), nl, drawBoard(Board).
+checkForWin(Board, player) :- win(Board), nl, write('You won!'), nl, drawBoard(Board).
 
 initialBoard(Board) :- Board = [
     [empty, empty, empty, empty, empty, empty],
@@ -13,35 +38,12 @@ initialBoard(Board) :- Board = [
     [empty, empty, empty, empty, empty, empty]
     ].
 
-testBoard1(Board) :- Board = [
-    [red, empty, empty, empty, empty, empty],
-    [red, yellow, empty, empty, empty, empty],
-    [yellow, yellow, red, red, empty, empty],
-    [yellow, red, yellow, red, yellow, empty],
-    [empty, empty, empty, empty, empty, empty],
-    [yellow, empty, empty, empty, empty, empty],
-    [yellow, yellow, red, red, red, yellow]
-    ].
+getAvailableMoves([], []).
+getAvailableMoves([Col|RestCol], [Index|AvailableMoves]) :- member(empty, Col),
+                                                        length([Col|RestCol], N),
+                                                        Index is (7-N),
+                                                        getAvailableMoves(RestCol, AvailableMoves).
 
-testBoardColWin(Board) :- Board = [
-    [red, empty, empty, empty, empty, empty],
-    [red, yellow, empty, empty, empty, empty],
-    [yellow, yellow, yellow, yellow, empty, empty],
-    [yellow, red, yellow, red, yellow, empty],
-    [empty, empty, empty, empty, empty, empty],
-    [yellow, empty, empty, empty, empty, empty],
-    [yellow, yellow, red, red, red, yellow]
-    ].
-
-testBoardRowWin(Board) :- Board = [
-    [red, empty, empty, empty, empty, empty],
-    [red, yellow, empty, empty, empty, empty],
-    [yellow, yellow, red, yellow, empty, empty],
-    [yellow, red, yellow, red, yellow, empty],
-    [red, red, empty, empty, empty, empty],
-    [yellow, red, empty, empty, empty, empty],
-    [yellow, red, red, red, yellow, yellow]
-    ].
 
 % computerMove(Board, AI, AvailableMoves, Move) is true if Move is the best move out of AvailableMoves given the Board and AI\
 % Random AI
@@ -90,8 +92,6 @@ allSameElements([H], H).
 allSameElements([H|T], H) :- allSameElements(T, H).
 
 %%%%%%%%%%% Board Drawing %%%%%%%%%%%%%%%%%%%%%%%%%
-
-
 testDrawBoard :- testBoard1(Board), drawBoard(Board).
 
 drawBoard([]).
@@ -135,4 +135,5 @@ replace([_|T], 1, X, [X|T]).
 replace([H|T], I, X, [H|R]):- I > -1, NI is I-1, replace(T, NI, X, R), !.
 replace(L, _, _, L).
 
+% take(N, List, Front) is true if Front is the first N elements of List
 take(N, List, Front):- length(Front, N), append(Front, _, List).
