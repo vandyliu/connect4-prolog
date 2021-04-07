@@ -1,4 +1,5 @@
 :- dynamic testNewBoard/1, testDrawFilledBoard/1.
+:- use_module(library(clpfd)).
 
 play :- initialBoard(Board), move(Board, player).
 
@@ -20,6 +21,26 @@ testBoard1(Board) :- Board = [
     [empty, empty, empty, empty, empty, empty],
     [yellow, empty, empty, empty, empty, empty],
     [yellow, yellow, red, red, red, yellow]
+    ].
+
+testBoardColWin(Board) :- Board = [
+    [red, empty, empty, empty, empty, empty],
+    [red, yellow, empty, empty, empty, empty],
+    [yellow, yellow, yellow, yellow, empty, empty],
+    [yellow, red, yellow, red, yellow, empty],
+    [empty, empty, empty, empty, empty, empty],
+    [yellow, empty, empty, empty, empty, empty],
+    [yellow, yellow, red, red, red, yellow]
+    ].
+
+testBoardRowWin(Board) :- Board = [
+    [red, empty, empty, empty, empty, empty],
+    [red, yellow, empty, empty, empty, empty],
+    [yellow, yellow, red, yellow, empty, empty],
+    [yellow, red, yellow, red, yellow, empty],
+    [red, red, empty, empty, empty, empty],
+    [yellow, red, empty, empty, empty, empty],
+    [yellow, red, red, red, yellow, yellow]
     ].
 
 % computerMove(Board, AI, AvailableMoves, Move) is true if Move is the best move out of AvailableMoves given the Board and AI\
@@ -49,6 +70,24 @@ placeMarkerOntoFirstEmptySpot(Marker, [empty|RestMarkers], [Marker|RestMarkers])
 % placeMarkerOntoFirstEmptySpot(red, [red, yellow, empty, empty], X).
 % placeMarkerOntoFirstEmptySpot(red, [red, yellow, red, empty], X).
 % placeMarkerOntoFirstEmptySpot(red, [red, yellow, red, red], X).
+
+%%%%%%%% Win conditions %%%%%%%%%%%%
+win(Board) :- fourVertical(Board).
+win(Board) :- fourHorizontal(Board).
+% win(Board) :- fourDiagonal(Board). TODO
+
+fourHorizontal(Board) :- transpose(Board, TBoard), fourVertical(TBoard).
+
+fourVertical([Col|RestCol]) :- fourInARow(Col).
+fourVertical([Col|RestCol]) :- fourVertical(RestCol).
+
+% fourInARow is true if the list contains four markers in a row
+fourInARow(Row) :- take(4, Row, Elements), allSameElements(Elements).
+fourInARow([H|T]) :- fourInARow(T).
+
+allSameElements([H|T]) :- teamColour(H), allSameElements([H|T], H).
+allSameElements([H], H).
+allSameElements([H|T], H) :- allSameElements(T, H).
 
 %%%%%%%%%%% Board Drawing %%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -95,3 +134,5 @@ headOfList([H|_], H).
 replace([_|T], 1, X, [X|T]).
 replace([H|T], I, X, [H|R]):- I > -1, NI is I-1, replace(T, NI, X, R), !.
 replace(L, _, _, L).
+
+take(N, List, Front):- length(Front, N), append(Front, _, List).
