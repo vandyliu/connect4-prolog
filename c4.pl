@@ -1,3 +1,5 @@
+:- dynamic testNewBoard/1, testDrawFilledBoard/1.
+
 play :- initialBoard(Board), move(Board, player).
 
 initialBoard(Board) :- Board = [
@@ -29,25 +31,24 @@ computerMove(_, random, AvailableMoves, Move) :- random_member(Move, AvailableMo
 teamColour(yellow).
 teamColour(red).
 
-% testNewBoard :- testBoard1(Board), newBoard(Board, 5, yellow, NB, 1), drawBoard(NB).
+testDrawFilledBoard :- testBoard1(Board), drawBoard(Board).
+testNewBoard :- testBoard1(Board), newBoard(Board, 5, yellow, NB), drawBoard(NB).
 
-% DOESNT WORK
-% newBoard([],_,_,_,_).
-% newBoard([OldCol|RestOldCols], Move, TurnColour, [NewCol|RestOldCols], I) :-
-%     Move = I,
-%     placeMarkerOntoFirstEmptySpot(TurnColour, OldCol, NewCol).
-% newBoard([OldCol|RestOldCols], Move, TurnColour, [OldCol|RestNewCols], I1) :-
-%     Move \= I1,
-%     newBoard(RestOldCols, Move, TurnColour, RestNewCols, I),
-%     I1 is I-1.
-
-
+% newBoard(OldBoard, Move, TurnColour, NewBoard) is true when NewBoard is the board after TurnColour is played in column Move in the board OldBoard.
+newBoard([],_,_,_,_).
+newBoard(Board, Move, TurnColour, NewBoard) :-
+    nth1(Move, Board, OldColumn), % Get nth column
+    placeMarkerOntoFirstEmptySpot(TurnColour, OldColumn, NewColumn), % Place marker in column
+    replace(Board, Move, NewColumn, NewBoard). % Replace column in old board with new column
 
 % True when 3rd argument equals the Marker placed at the first empty slot of 2nd argument
 placeMarkerOntoFirstEmptySpot(Marker, [H|RestMarkers], [H|Result]) :- 
     teamColour(Marker), teamColour(H), placeMarkerOntoFirstEmptySpot(Marker, RestMarkers, Result).
-placeMarkerOntoFirstEmptySpot(Marker, [empty|RestMarkers], [Marker|RestMarkers]) :- 
-    teamColour(Marker).  
+placeMarkerOntoFirstEmptySpot(Marker, [empty|RestMarkers], [Marker|RestMarkers]) :- teamColour(Marker).
+% Tests:
+% placeMarkerOntoFirstEmptySpot(red, [red, yellow, empty, empty], X).
+% placeMarkerOntoFirstEmptySpot(red, [red, yellow, red, empty], X).
+% placeMarkerOntoFirstEmptySpot(red, [red, yellow, red, red], X).
 
 %%%%%%%%%%% Board Drawing %%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -69,7 +70,7 @@ drawRow(Board, N) :-
     getRow(Board, N, Row),
     drawList(Row).
 
-getRow([],_,[]).
+getRow([], _, []).
 getRow([Col|RestCols], N, [Colour|Row]) :-
     nth1(N, Col, Colour),
     getRow(RestCols, N, Row).
@@ -89,3 +90,8 @@ member(X,[_|R]) :-
 
 % headOfList(L, H) is true if H is the head of list L
 headOfList([H|_], H).
+
+% replace(OriginalList, Index, Element, NewList).
+replace([_|T], 1, X, [X|T]).
+replace([H|T], I, X, [H|R]):- I > -1, NI is I-1, replace(T, NI, X, R), !.
+replace(L, _, _, L).
