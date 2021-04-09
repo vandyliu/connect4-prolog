@@ -13,6 +13,7 @@ move(Board, player) :-
 
 move(Board, computer) :-
     getAvailableMoves(Board, AvailableMoves),
+    nl,write(AvailableMoves),nl,
     computerMove(Board, random, AvailableMoves, CPUMove),
     newBoard(Board, CPUMove, yellow, NewBoard),
     transitionMove(NewBoard, computer).
@@ -39,7 +40,7 @@ initialBoard(Board) :- Board = [
 getAvailableMoves([], []).
 getAvailableMoves([Col|RestCol], [Index|AvailableMoves]) :- member(empty, Col),
                                                         length([Col|RestCol], N),
-                                                        Index is (7-N),
+                                                        Index is (8-N),
                                                         getAvailableMoves(RestCol, AvailableMoves).
 
 
