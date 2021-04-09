@@ -2,7 +2,11 @@
 :- use_module(library(clpfd)).
 :- include(boards).
 
-play :- initialBoard(Board), move(Board, player).
+tutorial :- write("Type the column followed by a period to place a marker. Eg. \"4.\" to place a marker in column 4.").
+
+playAgain :- nl,write("Type \"play.\" to play again!"),nl.
+
+play :- tutorial, initialBoard(Board), move(Board, player).
 testPlay :- testBoard1(Board), move(Board, player).
 
 move(Board, player) :-
@@ -34,14 +38,15 @@ transitionMove(Board, player) :- move(Board, computer).
 transitionMove(Board, computer) :- checkForWin(Board, computer).
 transitionMove(Board, computer) :- move(Board, player).
 
-checkForWin(Board, computer) :- win(Board), nl, write('The computer won!'), nl, drawBoard(Board).
-checkForWin(Board, player) :- win(Board), nl, write('You won!'), nl, drawBoard(Board).
+checkForWin(Board, computer) :- win(Board), nl, write('The computer won!'), nl, drawBoard(Board), playAgain.
+checkForWin(Board, player) :- win(Board), nl, write('You won!'), nl, drawBoard(Board), playAgain.
 checkForWin(Board, _) :- 
     getAvailableMoves(Board, Moves),
     length(Moves, L),
     L = 0,
     nl, write('It\'s a tie!'), nl,
-    drawBoard(Board).
+    drawBoard(Board),
+    playAgain.
 
 getAvailableMoves([], []).
 getAvailableMoves([Col|RestCol], [Index|AvailableMoves]) :- 
