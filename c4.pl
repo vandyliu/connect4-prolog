@@ -1,22 +1,36 @@
 :- dynamic testNewBoard/1, testDrawFilledBoard/1.
 :- use_module(library(clpfd)).
-:- include(testBoards).
+:- include(boards).
 
-play :- initialBoard(Board), move(Board, player).
+tutorial :- write("Type the column followed by a period to place a marker. Eg. \"4.\" to place a marker in column 4.").
+
+playAgain :- nl,write("Type \"play.\" to play again!"),nl.
+
+play :- tutorial, initialBoard(Board), move(Board, player).
+testPlay :- testBoard1(Board), move(Board, player).
 
 move(Board, player) :-
-    nl,write('Your turn.'),nl,
+    nl,write('Your turn.'),
+    getAvailableMoves(Board, AvailableMoves),
+    nl,write("Choose from: "),write(AvailableMoves),nl,
     drawBoard(Board),
     read(Move),
-    newBoard(Board, Move, red, NewBoard),
-    transitionMove(NewBoard, player).
+    validMoveCheck(Move, AvailableMoves, Board).
 
 move(Board, computer) :-
     getAvailableMoves(Board, AvailableMoves),
-    nl,write(AvailableMoves),nl,
     computerMove(Board, random, AvailableMoves, CPUMove),
     newBoard(Board, CPUMove, yellow, NewBoard),
     transitionMove(NewBoard, computer).
+
+validMoveCheck(Move, AvailableMoves, Board) :-
+    member(Move, AvailableMoves),
+    newBoard(Board, Move, red, NewBoard),
+    transitionMove(NewBoard, player).
+validMoveCheck(Move, AvailableMoves, Board) :-
+    \+ member(Move, AvailableMoves),
+    nl,write("Invalid move. Try again."),
+    move(Board, player).
 
 transitionMove(Board, player) :- checkForWin(Board, player).
 transitionMove(Board, player) :- move(Board, computer).
@@ -24,25 +38,27 @@ transitionMove(Board, player) :- move(Board, computer).
 transitionMove(Board, computer) :- checkForWin(Board, computer).
 transitionMove(Board, computer) :- move(Board, player).
 
-checkForWin(Board, computer) :- win(Board), nl, write('The computer won!'), nl, drawBoard(Board).
-checkForWin(Board, player) :- win(Board), nl, write('You won!'), nl, drawBoard(Board).
-
-initialBoard(Board) :- Board = [
-    [empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty],
-    [empty, empty, empty, empty, empty, empty]
-    ].
+checkForWin(Board, computer) :- win(Board), nl, write('The computer won!'), nl, drawBoard(Board), playAgain.
+checkForWin(Board, player) :- win(Board), nl, write('You won!'), nl, drawBoard(Board), playAgain.
+checkForWin(Board, _) :- 
+    getAvailableMoves(Board, Moves),
+    length(Moves, L),
+    L = 0,
+    nl, write('It\'s a tie!'), nl,
+    drawBoard(Board),
+    playAgain.
 
 getAvailableMoves([], []).
-getAvailableMoves([Col|RestCol], [Index|AvailableMoves]) :- member(empty, Col),
-                                                        length([Col|RestCol], N),
-                                                        Index is (8-N),
-                                                        getAvailableMoves(RestCol, AvailableMoves).
+getAvailableMoves([Col|RestCol], [Index|AvailableMoves]) :- 
+    member(empty, Col),
+    length([Col|RestCol], N),
+    Index is (8-N),
+    getAvailableMoves(RestCol, AvailableMoves).
+getAvailableMoves([Col|RestCol], AvailableMoves) :- 
+    \+ member(empty, Col),
+    getAvailableMoves(RestCol, AvailableMoves).
 
+testGetAvailableMoves(Y) :- testBoard1(X), getAvailableMoves(X, Y).
 
 % computerMove(Board, AI, AvailableMoves, Move) is true if Move is the best move out of AvailableMoves given the Board and AI\
 % Random AI

@@ -1,3 +1,13 @@
+initialBoard(Board) :- Board = [
+    [empty, empty, empty, empty, empty, empty],
+    [empty, empty, empty, empty, empty, empty],
+    [empty, empty, empty, empty, empty, empty],
+    [empty, empty, empty, empty, empty, empty],
+    [empty, empty, empty, empty, empty, empty],
+    [empty, empty, empty, empty, empty, empty],
+    [empty, empty, empty, empty, empty, empty]
+    ].
+
 testBoard1(Board) :- Board = [
     [red, empty, empty, empty, empty, empty],
     [red, yellow, empty, empty, empty, empty],
@@ -46,4 +56,14 @@ testBoardDiagTLBRWin(Board) :- Board = [
     [red, red, yellow, empty, empty, empty],
     [yellow, yellow, yellow, empty, empty, empty],
     [yellow, red, red, red, yellow, yellow]
+    ].
+
+testBoardAlmostFilled(Board) :- Board = [
+    [red, yellow, red, yellow, red, yellow],
+    [red, yellow, yellow, yellow, red, red],
+    [yellow, yellow, red, yellow, yellow, red],
+    [red, red, yellow, red, red, yellow],
+    [red, red, yellow, red, red, yellow],
+    [yellow, yellow, yellow, red, yellow, yellow],
+    [yellow, red, red, yellow, yellow, empty]
     ].
