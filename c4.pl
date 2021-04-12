@@ -137,7 +137,6 @@ getBestMove(Colour, ScoreMoves, Move) :-
     possibleMovesToMake(Score, ScoreMoves, PossibleMoves),
     computerMove([], normalDistribution, PossibleMoves, Colour, Move). 
 
-
 possibleMovesToMake(_, [], []).
 possibleMovesToMake(Score, [(Score,Move)|RestScoreMoves], [Move|RestMoves]) :- 
     possibleMovesToMake(Score, RestScoreMoves, RestMoves).
