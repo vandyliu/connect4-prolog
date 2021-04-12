@@ -1,4 +1,5 @@
 :- dynamic testNewBoard/1, testDrawFilledBoard/1.
+:- discontiguous computerMove/4.
 :- use_module(library(clpfd)).
 :- include(boards).
 
@@ -38,16 +39,15 @@ testPlay :- testBoardAlmostFilled(Board), move(Board, player, red, simple).
 
 % Simple AI
 computerMove(_, simple, AvailableMoves, Move) :- getSimpleMove(AvailableMoves, Move, [4,5,3,6,2,7,1]). 
-
-% Random AI
-computerMove(_, random, AvailableMoves, Move) :- random_member(Move, AvailableMoves).
-
-
 getSimpleMove([X], X, _).
 getSimpleMove(AvailableMoves, Column, [Column|_]) :- 
     member(Column, AvailableMoves).
 getSimpleMove(AvailableMoves, Move, [Column|T]) :- 
     notMember(Column, AvailableMoves), getSimpleMove(AvailableMoves, Move, T).
+
+% Random AI
+computerMove(_, random, AvailableMoves, Move) :- random_member(Move, AvailableMoves).
+
 
 %%%%%%%%%%%%%%%%%%%%%%% Gameplay Logistics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
