@@ -2,41 +2,83 @@
 :- use_module(library(clpfd)).
 :- include(boards).
 
+%%%%%%%%%%%%%%%%%% Starting Game Logistics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 tutorial :- write("Type the column followed by a period to place a marker. Eg. \"4.\" to place a marker in column 4.").
 
 playAgain :- nl,write("Type \"play.\" to play again!"),nl.
 
-play :- tutorial, initialBoard(Board), move(Board, player).
-testPlay :- testBoard1(Board), move(Board, player).
+chooseAlgo(FinalAlgo) :-
+    nl, write('Type \"simple.\" to play against a simple AI, \"random.\" to play against a random AI and anything else followed by a period to play agains Monte Carlo AI.'),
+    read(Algo),
+    getAlgo(Algo, FinalAlgo).
 
-move(Board, player) :-
-    nl,write('Your turn.'),
+getAlgo(Algo, simple) :- Algo = 'simple', write('You chose simple AI.').
+getAlgo(Algo, random) :- Algo = 'random', write('You chose random AI.').
+getAlgo(Algo, random) :- \+ Algo = 'simple', \+ Algo = 'random', write('You chose Monte Carlo AI.'). % Change later
+
+chooseColour(FinalColour) :- 
+    nl,write('Type \"red.\" to play as red or anything else followed by a period to play as yellow.'),nl,
+    read(Colour),
+    getColour(Colour, FinalColour).
+
+getColour(Colour, red) :- Colour = 'red', write('You chose red.').
+getColour(Colour, yellow) :- \+ Colour = 'red', write('You chose yellow.').
+
+play :- tutorial, chooseColour(Colour), chooseAlgo(Algo), startGame(Colour, Algo).
+
+startGame(red, Algo) :- initialBoard(Board), move(Board, player, red, Algo).
+startGame(yellow, Algo) :- initialBoard(Board), move(Board, computer, red, Algo).
+
+testPlay :- testBoardAlmostFilled(Board), move(Board, player, red, simple).
+
+%%%%%%%%%%%%%%%%% Computer Algorithms %%%%%%%%%%%%%%%%%%%%%
+
+% computerMove(Board, AI, AvailableMoves, Move) is true if Move is the best move out of AvailableMoves given the Board and AI\
+
+% Simple AI
+computerMove(_, simple, AvailableMoves, Move) :- getSimpleMove(AvailableMoves, Move, [4,5,3,6,2,7,1]). 
+
+% Random AI
+computerMove(_, random, AvailableMoves, Move) :- random_member(Move, AvailableMoves).
+
+
+getSimpleMove([X], X, _).
+getSimpleMove(AvailableMoves, Column, [Column|_]) :- 
+    member(Column, AvailableMoves).
+getSimpleMove(AvailableMoves, Move, [Column|T]) :- 
+    notMember(Column, AvailableMoves), getSimpleMove(AvailableMoves, Move, T).
+
+%%%%%%%%%%%%%%%%%%%%%%% Gameplay Logistics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+move(Board, player, Colour, Algo) :-
+    nl,write('Your turn as '), write(Colour), write('.'),
     getAvailableMoves(Board, AvailableMoves),
     nl,write("Choose from: "),write(AvailableMoves),nl,
     drawBoard(Board),
     read(Move),
-    validMoveCheck(Move, AvailableMoves, Board).
+    validMoveCheck(Move, AvailableMoves, Board, Colour, Algo).
 
-move(Board, computer) :-
+move(Board, computer, Colour, Algo) :-
     getAvailableMoves(Board, AvailableMoves),
-    computerMove(Board, random, AvailableMoves, CPUMove),
-    newBoard(Board, CPUMove, yellow, NewBoard),
-    transitionMove(NewBoard, computer).
+    computerMove(Board, Algo, AvailableMoves, CPUMove),
+    newBoard(Board, CPUMove, Colour, NewBoard),
+    transitionMove(NewBoard, computer, Colour, Algo).
 
-validMoveCheck(Move, AvailableMoves, Board) :-
+validMoveCheck(Move, AvailableMoves, Board, Colour, Algo) :-
     member(Move, AvailableMoves),
-    newBoard(Board, Move, red, NewBoard),
-    transitionMove(NewBoard, player).
-validMoveCheck(Move, AvailableMoves, Board) :-
-    \+ member(Move, AvailableMoves),
+    newBoard(Board, Move, Colour, NewBoard),
+    transitionMove(NewBoard, player, Colour, Algo).
+validMoveCheck(Move, AvailableMoves, Board, Colour, Algo) :-
+    notMember(Move, AvailableMoves),
     nl,write("Invalid move. Try again."),
-    move(Board, player).
+    move(Board, player, Colour, Algo).
 
-transitionMove(Board, player) :- checkForWin(Board, player).
-transitionMove(Board, player) :- move(Board, computer).
+transitionMove(Board, player, _, _) :- checkForWin(Board, player).
+transitionMove(Board, player, Colour, Algo) :- otherColour(Colour, OtherColour), move(Board, computer, OtherColour, Algo).
 
-transitionMove(Board, computer) :- checkForWin(Board, computer).
-transitionMove(Board, computer) :- move(Board, player).
+transitionMove(Board, computer, _, _) :- checkForWin(Board, computer).
+transitionMove(Board, computer, Colour, Algo) :- otherColour(Colour, OtherColour), move(Board, player, OtherColour, Algo).
 
 checkForWin(Board, computer) :- win(Board), nl, write('The computer won!'), nl, drawBoard(Board), playAgain.
 checkForWin(Board, player) :- win(Board), nl, write('You won!'), nl, drawBoard(Board), playAgain.
@@ -55,19 +97,18 @@ getAvailableMoves([Col|RestCol], [Index|AvailableMoves]) :-
     Index is (8-N),
     getAvailableMoves(RestCol, AvailableMoves).
 getAvailableMoves([Col|RestCol], AvailableMoves) :- 
-    \+ member(empty, Col),
+    notMember(empty, Col),
     getAvailableMoves(RestCol, AvailableMoves).
 
 testGetAvailableMoves(Y) :- testBoard1(X), getAvailableMoves(X, Y).
-
-% computerMove(Board, AI, AvailableMoves, Move) is true if Move is the best move out of AvailableMoves given the Board and AI\
-% Random AI
-computerMove(_, random, AvailableMoves, Move) :- random_member(Move, AvailableMoves).
 
 % Game State Logics
 
 teamColour(yellow).
 teamColour(red).
+
+otherColour(yellow, red).
+otherColour(red, yellow).
 
 testDrawFilledBoard :- testBoard1(Board), drawBoard(Board).
 testNewBoard :- testBoard1(Board), newBoard(Board, 5, yellow, NB), drawBoard(NB).
@@ -140,6 +181,7 @@ allSameElements([H], H).
 allSameElements([H|T], H) :- allSameElements(T, H).
 
 %%%%%%%%%%% Board Drawing %%%%%%%%%%%%%%%%%%%%%%%%%
+
 testDrawBoard :- testBoard1(Board), drawBoard(Board).
 
 drawBoard([]).
@@ -174,6 +216,8 @@ drawList([empty|RestRow]) :- ansi_format([bold,fg(black)], 'O ~w', [' ']), drawL
 member(X,[X|_]).
 member(X,[_|R]) :-
     member(X,R).
+
+notMember(X, L) :- \+ member(X, L).
 
 % headOfList(L, H) is true if H is the head of list L
 headOfList([H|_], H).
