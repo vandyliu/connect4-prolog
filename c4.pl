@@ -25,6 +25,7 @@ chooseAlgo(FinalAlgo) :-
 getAlgo(Algo, simple) :- Algo = 'simple', write('You chose simple AI.').
 getAlgo(Algo, random) :- Algo = 'random', write('You chose random AI.').
 getAlgo(Algo, minimax) :- Algo = 'minimax', write('You chose minimax AI. Note: Positive score is better for red. Negative score is better for yellow.').
+getAlgo(Algo, minimax) :- Algo = 'mm', write('You chose minimax AI. Note: Positive score is better for red. Negative score is better for yellow.').
 getAlgo(Algo, normalDistribution) :- Algo = 'nd', write('You chose moves-normally-distributed AI.').
 getAlgo(Algo, minimax) :- \+ Algo = 'simple', \+ Algo = 'random', write('You chose Monte Carlo AI.'). % Change later
 
@@ -90,25 +91,39 @@ getMoveFromDistribution(X, Move) :-
 
 
 % Minimax AI with certain depth
-% Code inspired from https://www.metalevel.at/conn4/ and modified to fit our implementation
+% Code inspired from https://www.metalevel.at/conn4/ and https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning#Pseudocode and modified to fit our implementation
 
 % Choose custom depth here:
 depth(5).
 
+% For simplicity, always assume player trying to maximize is red.
 maxPlayer(red).
+
 computerMove(Board, minimax, AvailableMoves, Colour, Move) :- 
     depth(Depth),
-    playMoves(AvailableMoves, Depth, Colour, Board, ScoreMoves),
+    Alpha is (-1 -Depth), % Alpha is best value that maximizer can guarantee
+    Beta is (1 + Depth), % Beta is best value that minimizer can guarantee
+    sortOrder([4,5,3,6,2,7,1], AvailableMoves, BestOrderAvailableMoves),
+    playMoves(BestOrderAvailableMoves, Depth, Alpha, Beta, Colour, Board, ScoreMoves),
     nl,write('Minimax (score, move):'),write(ScoreMoves),nl,
     getBestMove(Colour, ScoreMoves, Move).
 
-playMoves([], _, _, _, []).
-playMoves([Col|RestCols], Depth, Colour, Board, [(Score, Col)|RestScoreMoves]) :-
-    playMove(Depth, Colour, Board, Col, Score), % Try each move in available columns
-    playMoves(RestCols, Depth, Colour, Board, RestScoreMoves).
+playMoves([], _, _, _, _, _, []).
+playMoves([Col|RestCols], Depth, Alpha, Beta, Colour, Board, [(Score, Col)|RestScoreMoves]) :-
+    playMove(Depth, Alpha, Beta, Colour, Board, Col, Score), % Try each move in available columns
+    (maxPlayer(Colour) ->
+        max(Alpha, Score, NewAlpha), % NewAlpha = max(Alpha, Score)
+        (NewAlpha > Beta ->
+            RestScoreMoves = []; % NewAlpha > Beta means we don't have to go deeper because maxPlayer will choose NewAlpha no matter what
+            playMoves(RestCols, Depth, NewAlpha, Beta, Colour, Board, RestScoreMoves))
+    ;
+        min(Beta, Score, NewBeta),
+        (NewBeta < Alpha ->
+            RestScoreMoves = [];
+        playMoves(RestCols, Depth, Alpha, NewBeta, Colour, Board, RestScoreMoves))).
 
-playMove(0, _, _, _, 0). % Reached max depth.
-playMove(Depth, Colour, Board, Move, Score) :-
+playMove(0, _, _, _, _, _, 0). % Reached max depth.
+playMove(Depth, Alpha, Beta, Colour, Board, Move, Score) :-
     \+ Depth = 0,
     newBoard(Board, Move, Colour, NewBoard),
     (win(NewBoard) -> 
@@ -120,7 +135,7 @@ playMove(Depth, Colour, Board, Move, Score) :-
             Score is 0;
             NewDepth is (Depth - 1),
             otherColour(Colour, OtherColour),
-            playMoves(NewAvailableMoves, NewDepth, OtherColour, NewBoard, ScoreMoves),
+            playMoves(NewAvailableMoves, NewDepth, Alpha, Beta, OtherColour, NewBoard, ScoreMoves),
             getBestScore(ScoreMoves, OtherColour, Score)
     )).
 
@@ -135,7 +150,7 @@ getBestScore(ScoreMoves, Colour, Score) :-
 getBestMove(Colour, ScoreMoves, Move) :-
     getBestScore(ScoreMoves, Colour, Score),
     possibleMovesToMake(Score, ScoreMoves, PossibleMoves),
-    computerMove([], normalDistribution, PossibleMoves, Colour, Move). 
+    computerMove([], normalDistribution, PossibleMoves, Colour, Move).  % Choose best move along normal distribution
 
 possibleMovesToMake(_, [], []).
 possibleMovesToMake(Score, [(Score,Move)|RestScoreMoves], [Move|RestMoves]) :- 
@@ -327,3 +342,13 @@ take(N, List, Front):- length(Front, N), append(Front, _, List).
 % zip(X, Y, Z) is true if Z is a list of pairs corresponding to values (X,Y).
 zip([], [], []).
 zip([X|Xs], [Y|Ys], [(X,Y)|Zs]) :- zip(Xs,Ys,Zs).
+
+max(A, B, A) :- A > B.
+max(A, B, B) :- A =< B.
+
+min(A, B, A) :- A < B.
+min(A, B, B) :- A >= B.
+
+sortOrder([], _, []).
+sortOrder([H|T], AvailableMoves, [H|RestFinalList]) :- member(H, AvailableMoves), sortOrder(T, AvailableMoves, RestFinalList).
+sortOrder([H|T], AvailableMoves, RestFinalList) :- notMember(H, AvailableMoves), sortOrder(T, AvailableMoves, RestFinalList).
