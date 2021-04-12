@@ -90,6 +90,8 @@ getMoveFromDistribution(X, Move) :-
 
 
 % Minimax AI with certain depth
+% Code inspired from https://www.metalevel.at/conn4/ and modified to fit our implementation
+
 % Choose custom depth here:
 depth(5).
 
