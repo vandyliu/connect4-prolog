@@ -114,7 +114,7 @@ playMoves([Col|RestCols], Depth, Alpha, Beta, Colour, Board, [(Score, Col)|RestS
     (maxPlayer(Colour) ->
         max(Alpha, Score, NewAlpha), % NewAlpha = max(Alpha, Score)
         (NewAlpha > Beta ->
-            RestScoreMoves = []; % NewAlpha > Beta means we don't have to go deeper because maxPlayer will choose NewAlpha no matter what
+            RestScoreMoves = []; % NewAlpha > Beta means we don't have to go deeper because maxPlayer will choose move pertaining to NewAlpha no matter what
             playMoves(RestCols, Depth, NewAlpha, Beta, Colour, Board, RestScoreMoves))
     ;
         min(Beta, Score, NewBeta),
