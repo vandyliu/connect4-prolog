@@ -27,7 +27,7 @@ getAlgo(Algo, random) :- Algo = 'random', write('You chose random AI.').
 getAlgo(Algo, minimax) :- Algo = 'minimax', write('You chose minimax AI. Note: Positive score is better for red. Negative score is better for yellow.').
 getAlgo(Algo, minimax) :- Algo = 'mm', write('You chose minimax AI. Note: Positive score is better for red. Negative score is better for yellow.').
 getAlgo(Algo, normalDistribution) :- Algo = 'nd', write('You chose moves-normally-distributed AI.').
-getAlgo(Algo, monteCarlo) :- \+ Algo = 'simple', \+ Algo = 'random',  \+ Algo = 'minimax',  \+ Algo = 'nd', write('You chose Monte Carlo AI.').
+getAlgo(Algo, monteCarlo) :- \+ Algo = 'simple', \+ Algo = 'random',  \+ Algo = 'minimax',  \+ Algo = 'nd', \+ Algo = 'mm', write('You chose Monte Carlo AI.').
 
 chooseColour(FinalColour) :- 
     nl,write('Type \"red.\" to play as red or anything else followed by a period to play as yellow.'),nl,
