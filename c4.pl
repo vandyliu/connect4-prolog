@@ -105,7 +105,8 @@ computerMove(Board, minimax, AvailableMoves, Colour, Move) :-
     Beta is (1 + Depth), % Beta is best value that minimizer can guarantee
     sortOrder([4,5,3,6,2,7,1], AvailableMoves, BestOrderAvailableMoves),
     playMoves(BestOrderAvailableMoves, Depth, Alpha, Beta, Colour, Board, ScoreMoves),
-    nl,write('Minimax (score, move):'),write(ScoreMoves),nl,
+    sortOrder([(_,1),(_,2),(_,3),(_,4),(_,5),(_,6),(_,7)], ScoreMoves, PresentableScoreMoves),
+    nl,write('Minimax (score, move):'),write(PresentableScoreMoves),nl,
     getBestMove(Colour, ScoreMoves, Move).
 
 playMoves([], _, _, _, _, _, []).
@@ -163,8 +164,7 @@ possibleMovesToMake(Score, [(OtherScore,_)|RestScoreMoves], RestMoves) :-
 monteCarloGames(50).
 % For simplicity, always assume player trying to maximize is red. (same as minimax)
 computerMove(Board, monteCarlo, AvailableMoves, Colour, Move) :- 
-    sortOrder([4,5,3,6,2,7,1], AvailableMoves, BestOrderAvailableMoves),
-    playMonteGames(BestOrderAvailableMoves, Colour, Board, Move, ScoreMoves),
+    playMonteGames(AvailableMoves, Colour, Board, Move, ScoreMoves),
     nl,write('MonteCarlo (score, move):'),write(ScoreMoves),nl,
     getBestMove(Colour, ScoreMoves, Move).
 
@@ -177,24 +177,23 @@ playMonteGames([AvailMove|RestAvailMoves], Colour, Board, Move, [(Score, AvailMo
 playXGames(0,_,_,_,0).
 playXGames(NumGames, InitialMove, Colour, Board, TotalScore) :-
     \+ NumGames = 0,
-    playOutMove(1, Colour, Board, InitialMove, Score),
+    playOutMove(Colour, Board, InitialMove, Score),
     NewNumGames is NumGames - 1,
     playXGames(NewNumGames, InitialMove, Colour, Board, TempScore),
     TotalScore is TempScore + Score.
     
-playOutMove(Depth, Colour, Board, Move, Score) :-
+playOutMove(Colour, Board, Move, Score) :-
     newBoard(Board, Move, Colour, NewBoard),
     (win(NewBoard) -> 
     (maxPlayer(Colour) ->
-        Score is 1 + (1 / Depth) ; % Quicker wins are worth more
-        Score is -1 - (1 / Depth)) ; 
+        Score is 1 ;
+        Score is -1 );
         getAvailableMoves(NewBoard, NewAvailableMoves),
         (NewAvailableMoves == [] ->
-            Score is 0;
-            NewDepth is (Depth + 1),
+            Score is 0 ;
             otherColour(Colour, OtherColour),
             random_member(NextMove, NewAvailableMoves),
-            playOutMove(NewDepth, OtherColour, NewBoard, NextMove, Score)
+            playOutMove(OtherColour, NewBoard, NextMove, Score)
     )).
 
 
