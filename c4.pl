@@ -187,20 +187,24 @@ possibleMovesToMake(Score, [(OtherScore,_)|RestScoreMoves], RestMoves) :-
     \+ Score = OtherScore, possibleMovesToMake(Score, RestScoreMoves, RestMoves).
 
 % Monte-Carlo AI playing out X games
+% For simplicity, always assume player trying to maximize is red. (same as minimax)
 % Choose amount of games to play at each level here:
 monteCarloGames(50).
-% For simplicity, always assume player trying to maximize is red. (same as minimax)
+
 computerMove(Board, monteCarlo, AvailableMoves, Colour, Move) :- 
-    playMonteGames(AvailableMoves, Colour, Board, Move, ScoreMoves),
+    playMonteGames(AvailableMoves, Colour, Board, ScoreMoves),
     nl,write('MonteCarlo (score, move):'),write(ScoreMoves),nl,
     getBestMove(Colour, ScoreMoves, Move).
 
-playMonteGames([],_,_,_,[]).
-playMonteGames([AvailMove|RestAvailMoves], Colour, Board, Move, [(Score, AvailMove)|RestScoreMoves]) :-
+% playMonteGames(AvailableMoves, Colour, Board, Move, ScoreMoves) is true when ScoreMoves equals the list of (Score, Move)s that result from playing
+% out X amount of Monte Carlo games for each AvailMove in AvailableMoves
+playMonteGames([],_,_,[]).
+playMonteGames([AvailMove|RestAvailMoves], Colour, Board, [(Score, AvailMove)|RestScoreMoves]) :-
     monteCarloGames(NumGames),
     playXGames(NumGames, AvailMove, Colour, Board, Score),
-    playMonteGames(RestAvailMoves, Colour, Board, Move, RestScoreMoves).
+    playMonteGames(RestAvailMoves, Colour, Board, RestScoreMoves).
 
+% playXGames(NumGames, InitialMove, Colour, Board, TotalScore) is true when TotalScore equals the sum of scores playing out the given InitialMove NumGames amount of times.
 playXGames(0,_,_,_,0).
 playXGames(NumGames, InitialMove, Colour, Board, TotalScore) :-
     \+ NumGames = 0,
@@ -209,6 +213,7 @@ playXGames(NumGames, InitialMove, Colour, Board, TotalScore) :-
     playXGames(NewNumGames, InitialMove, Colour, Board, TempScore),
     TotalScore is TempScore + Score.
     
+% playOutMove(Colour, Board, Move, Score) is true when Score equals the result of playing random moves given a Board until the game has ended.  
 playOutMove(Colour, Board, Move, Score) :-
     newBoard(Board, Move, Colour, NewBoard),
     (win(NewBoard) -> 
@@ -319,16 +324,16 @@ fourVertical([_|RestCol]) :- fourVertical(RestCol).
 fourDiagonal(Board) :- zip([1,1,1,1,1,1,2,3,4,5,6,7],[1,2,3,4,5,6,1,1,1,1,1,1], L), checkBLTRAtPoints(Board, L).
 fourDiagonal(Board) :- zip([1,1,1,1,1,1,2,3,4,5,6,7],[1,2,3,4,5,6,6,6,6,6,6,6], L), checkTLBRAtPoints(Board, L).
 
-% checkBLTRAtPoints(Board, Coordinates) is true if there is a diagonal win in Board starting at (C,R)
+% checkBLTRAtPoints(Board, Coordinates) is true if there is a diagonal win going up and to the right in Board starting at (C,R)
 checkBLTRAtPoints(Board, [(C,R)|_]) :- getDiagonalBottomLeftToTopRight(Board, C, R, D), fourInARow(D).
 checkBLTRAtPoints(Board, [_|T]) :- checkBLTRAtPoints(Board, T).
 
-% checkTLBRAtPoints(Board, Coordinates) is true if there is a diagonal win in Board starting at (C,R)
+% checkTLBRAtPoints(Board, Coordinates) is true if there is a diagonal win going down and to the right in Board starting at (C,R)
 checkTLBRAtPoints(Board, [(C,R)|_]) :- getDiagonalTopLeftToBottomRight(Board, C, R, D), fourInARow(D).
 checkTLBRAtPoints(Board, [_|T]) :- checkTLBRAtPoints(Board, T).
 
-% getDiagonalBottomLeftToTopRight(Board, C, R, Markers) is true if Markers is equal to the bottom left of (C, R) going diagonal towards the top right
-% L is list on the diagonal from given starting coords, going bot left -> top right
+% getDiagonalBottomLeftToTopRight(Board, C, R, Markers) is true if
+% Markers is equal to the the list of markers starting at (C, R) going diagonal towards the top right
 getDiagonalBottomLeftToTopRight(_, C, _, []) :- C < 1.
 getDiagonalBottomLeftToTopRight(_, C, _, []) :- C > 7.
 getDiagonalBottomLeftToTopRight(_, _, R, []) :- R < 1.
@@ -340,8 +345,8 @@ getDiagonalBottomLeftToTopRight(Board, C, R, [Marker|L]) :-
     R1 is R+1,
     getDiagonalBottomLeftToTopRight(Board, C1, R1, L).
 
-% getDiagonalTopLeftToBottomRight(Board, C, R, Markers) is true if Markers is equal to the top left of (C, R) going diagonal towards the bottom right
-% L is list on the diagonal from given starting coords, going topleft -> bottomright
+% getDiagonalTopLeftToBottomRight(Board, C, R, Markers) is true if
+% Markers is equal to the the list of markers starting at (C, R) going diagonal towards the bottom right
 getDiagonalTopLeftToBottomRight(_, C, _, []) :- C < 1.
 getDiagonalTopLeftToBottomRight(_, C, _, []) :- C > 7.
 getDiagonalTopLeftToBottomRight(_, _, R, []) :- R < 1.
