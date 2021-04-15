@@ -27,7 +27,7 @@ getAlgo(Algo, random) :- Algo = 'random', write('You chose random AI.').
 getAlgo(Algo, minimax) :- Algo = 'minimax', write('You chose minimax AI. Note: Positive score is better for red. Negative score is better for yellow.').
 getAlgo(Algo, minimax) :- Algo = 'mm', write('You chose minimax AI. Note: Positive score is better for red. Negative score is better for yellow.').
 getAlgo(Algo, normalDistribution) :- Algo = 'nd', write('You chose moves-normally-distributed AI.').
-getAlgo(Algo, minimax) :- \+ Algo = 'simple', \+ Algo = 'random', write('You chose Monte Carlo AI.'). % Change later
+getAlgo(Algo, monteCarlo) :- \+ Algo = 'simple', \+ Algo = 'random',  \+ Algo = 'minimax',  \+ Algo = 'nd', write('You chose Monte Carlo AI.').
 
 chooseColour(FinalColour) :- 
     nl,write('Type \"red.\" to play as red or anything else followed by a period to play as yellow.'),nl,
@@ -157,6 +157,46 @@ possibleMovesToMake(Score, [(Score,Move)|RestScoreMoves], [Move|RestMoves]) :-
     possibleMovesToMake(Score, RestScoreMoves, RestMoves).
 possibleMovesToMake(Score, [(OtherScore,_)|RestScoreMoves], RestMoves) :- 
     \+ Score = OtherScore, possibleMovesToMake(Score, RestScoreMoves, RestMoves).
+
+% Monte-Carlo AI playing out X games
+% Choose amount of games to play at each level here:
+monteCarloGames(50).
+% For simplicity, always assume player trying to maximize is red. (same as minimax)
+computerMove(Board, monteCarlo, AvailableMoves, Colour, Move) :- 
+    sortOrder([4,5,3,6,2,7,1], AvailableMoves, BestOrderAvailableMoves),
+    playMonteGames(BestOrderAvailableMoves, Colour, Board, Move, ScoreMoves),
+    nl,write('MonteCarlo (score, move):'),write(ScoreMoves),nl,
+    getBestMove(Colour, ScoreMoves, Move).
+
+playMonteGames([],_,_,_,[]).
+playMonteGames([AvailMove|RestAvailMoves], Colour, Board, Move, [(Score, AvailMove)|RestScoreMoves]) :-
+    monteCarloGames(NumGames),
+    playXGames(NumGames, AvailMove, Colour, Board, Score),
+    playMonteGames(RestAvailMoves, Colour, Board, Move, RestScoreMoves).
+
+playXGames(0,_,_,_,0).
+playXGames(NumGames, InitialMove, Colour, Board, TotalScore) :-
+    \+ NumGames = 0,
+    playOutMove(1, Colour, Board, InitialMove, Score),
+    NewNumGames is NumGames - 1,
+    playXGames(NewNumGames, InitialMove, Colour, Board, TempScore),
+    TotalScore is TempScore + Score.
+    
+playOutMove(Depth, Colour, Board, Move, Score) :-
+    newBoard(Board, Move, Colour, NewBoard),
+    (win(NewBoard) -> 
+    (maxPlayer(Colour) ->
+        Score is 1 + (1 / Depth) ; % Quicker wins are worth more
+        Score is -1 - (1 / Depth)) ; 
+        getAvailableMoves(NewBoard, NewAvailableMoves),
+        (NewAvailableMoves == [] ->
+            Score is 0;
+            NewDepth is (Depth + 1),
+            otherColour(Colour, OtherColour),
+            random_member(NextMove, NewAvailableMoves),
+            playOutMove(NewDepth, OtherColour, NewBoard, NextMove, Score)
+    )).
+
 
 %%%%%%%%%%%%%%%%%%%%%%% Gameplay Logistics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
